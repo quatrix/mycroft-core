@@ -457,8 +457,16 @@ class ResponsiveRecognizer(speech_recognition.Recognizer):
                 chopped = byte_data[-test_size:] \
                     if test_size < len(byte_data) else byte_data
                 audio_data = chopped + silence
-                said_wake_word = \
-                    self.wake_word_recognizer.found_wake_word(audio_data)
+
+                # FIXME: 
+                # audio_data used to be just frame data and now it's AudioData,
+                # this will break all other hotword recognizers
+                # but as the voiceitt recognizer uses the SpeechRecognition
+                # library, and it expects AudioData, i'm just passing it what it wants
+                # and ignoring the breakage for now.
+
+                audio_data = self._create_audio_data(audio_data, source)
+                said_wake_word = self.wake_word_recognizer.found_wake_word(audio_data)
                 # if a wake word is success full then record audio in temp
                 # file.
                 if self.save_wake_words and said_wake_word:

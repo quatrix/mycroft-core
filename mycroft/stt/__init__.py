@@ -89,6 +89,15 @@ class GoogleSTT(TokenSTT):
         self.lang = language or self.lang
         return self.recognizer.recognize_google(audio, self.token, self.lang)
 
+class VoiceittSTT(STT):
+    def __init__(self):
+        super(VoiceittSTT, self).__init__()
+
+    def execute(self, audio, language=None):
+        spellotape_uri = self.config.get("spellotape_uri")
+        res = self.recognizer.recognize_voiceitt(audio, spellotape_uri=spellotape_uri)
+        return "say '" + res + "'"
+
 
 class GoogleCloudSTT(GoogleJsonSTT):
     def __init__(self):
@@ -196,7 +205,8 @@ class STTFactory(object):
         "kaldi": KaldiSTT,
         "bing": BingSTT,
         "houndify": HoundifySTT,
-        "deepspeech_server": DeepSpeechServerSTT
+        "deepspeech_server": DeepSpeechServerSTT,
+        "voiceitt": VoiceittSTT
     }
 
     @staticmethod

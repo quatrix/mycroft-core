@@ -30,6 +30,8 @@ from threading import Thread
 
 from mycroft.util.log import LOG
 
+from speech_recognition import Recognizer, AudioData
+
 
 RECOGNIZER_DIR = join(abspath(dirname(__file__)), "recognizer")
 
@@ -107,6 +109,20 @@ class PocketsphinxHotWord(HotWordEngine):
     def found_wake_word(self, frame_data):
         hyp = self.transcribe(frame_data)
         return hyp and self.key_phrase in hyp.hypstr.lower()
+
+class VoiceittHotword(HotWordEngine):
+    def __init__(self, key_phrase="hey mycroft", config=None, lang="en-us"):
+        super(VoiceittHotword, self).__init__(key_phrase, config, lang)
+        self.recognizer = Recognizer()
+
+    def found_wake_word(self, audio): 
+        uri = self.config.get("uri")
+
+        try:
+            recognized = self.recognizer.recognize_voiceitt(audio, spellotape_uri=uri)
+            return recognized == self.key_phrase
+        except Exception:
+            return False
 
 
 class PreciseHotword(HotWordEngine):
@@ -260,7 +276,8 @@ class HotWordFactory(object):
     CLASSES = {
         "pocketsphinx": PocketsphinxHotWord,
         "precise": PreciseHotword,
-        "snowboy": SnowboyHotWord
+        "snowboy": SnowboyHotWord,
+        "voiceitt": VoiceittHotword,
     }
 
     @staticmethod
