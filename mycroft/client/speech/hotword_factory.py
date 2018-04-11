@@ -30,7 +30,7 @@ from threading import Thread
 
 from mycroft.util.log import LOG
 
-from speech_recognition import Recognizer, AudioData
+from urllib2 import Request, urlopen, HTTPError
 
 
 RECOGNIZER_DIR = join(abspath(dirname(__file__)), "recognizer")
@@ -113,16 +113,32 @@ class PocketsphinxHotWord(HotWordEngine):
 class VoiceittHotword(HotWordEngine):
     def __init__(self, key_phrase="hey mycroft", config=None, lang="en-us"):
         super(VoiceittHotword, self).__init__(key_phrase, config, lang)
-        self.recognizer = Recognizer()
+        self.feed_uri = self.config.get("feed")
+        self.hotword_uri = self.config.get("hotword")
 
-    def found_wake_word(self, audio): 
-        uri = self.config.get("uri")
+    def update(self, chunk):
+        try:
+            request = Request(
+                self.feed_uri.encode("utf-8"),
+                data=chunk,
+                headers={"Content-Type": "application/octet-stream"}
+            )
+
+            urlopen(request, timeout=2)
+        except Exception:
+            LOG.exception('Exception while updating hotword buffer')
+
+    def found_wake_word(self, chunk): 
+        request = Request(self.hotword_uri.encode("utf-8"))
 
         try:
-            recognized = self.recognizer.recognize_voiceitt(audio, spellotape_uri=uri)
-            return recognized == self.key_phrase
+            response = urlopen(request, timeout=2).read().decode("utf-8")
+            return response == self.key_phrase
         except Exception:
-            return False
+            LOG.exception('Exception while finding wake word')
+
+        return False
+
 
 
 class PreciseHotword(HotWordEngine):
@@ -254,7 +270,7 @@ class SnowboyHotWord(HotWordEngine):
         # Hotword module config
         module = self.config.get("module")
         if module != "snowboy":
-            LOG.warning(module + " module does not match with Hotword class "
+            lOG.warning(module + " module does not match with Hotword class "
                                  "snowboy")
         # Hotword params
         models = self.config.get("models", {})

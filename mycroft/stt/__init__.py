@@ -95,9 +95,7 @@ class VoiceittSTT(STT):
 
     def execute(self, audio, language=None):
         spellotape_uri = self.config.get("spellotape_uri")
-        res = self.recognizer.recognize_voiceitt(audio, spellotape_uri=spellotape_uri)
-        return "say '" + res + "'"
-
+        return self.recognizer.recognize_voiceitt(audio, spellotape_uri=spellotape_uri)
 
 class GoogleCloudSTT(GoogleJsonSTT):
     def __init__(self):
