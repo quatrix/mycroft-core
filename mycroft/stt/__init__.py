@@ -14,8 +14,9 @@
 #
 import re
 import json
+import requests
 from abc import ABCMeta, abstractmethod
-from requests import post
+from requests import post, exceptions
 from speech_recognition import Recognizer
 
 from mycroft.api import STTApi
@@ -130,7 +131,7 @@ class IBMSTT(BasicSTT):
 class MycroftSTT(STT):
     def __init__(self):
         super(MycroftSTT, self).__init__()
-        self.api = STTApi()
+        self.api = STTApi("stt")
 
     def execute(self, audio, language=None):
         self.lang = language or self.lang
@@ -141,10 +142,24 @@ class MycroftSTT(STT):
             return self.api.stt(audio.get_flac_data(), self.lang, 1)[0]
 
 
+class MycroftDeepSpeechSTT(STT):
+    """Mycroft Hosted DeepSpeech"""
+    def __init__(self):
+        super(MycroftDeepSpeechSTT, self).__init__()
+        self.api = STTApi("deepspeech")
+
+    def execute(self, audio, language=None):
+        language = language or self.lang
+        if not language.startswith("en"):
+            raise ValueError("Deepspeech is currently english only")
+        return self.api.stt(audio.get_wav_data(), self.lang, 1)
+
+
 class DeepSpeechServerSTT(STT):
     """
         STT interface for the deepspeech-server:
         https://github.com/MainRo/deepspeech-server
+        use this if you want to host DeepSpeech yourself
     """
     def __init__(self):
         super(DeepSpeechServerSTT, self).__init__()
@@ -204,7 +219,8 @@ class STTFactory(object):
         "bing": BingSTT,
         "houndify": HoundifySTT,
         "deepspeech_server": DeepSpeechServerSTT,
-        "voiceitt": VoiceittSTT
+        "voiceitt": VoiceittSTT,
+        "mycroft_deepspeech": MycroftDeepSpeechSTT
     }
 
     @staticmethod
